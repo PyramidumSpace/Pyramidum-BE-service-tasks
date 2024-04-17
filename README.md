@@ -1,2 +1,2 @@
-# Pyramidum-BE-service-tasks
+# backend-service-tasks
 Microservice for tasks
