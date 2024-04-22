@@ -1,4 +1,3 @@
-env: "prod"
 grpc:
   port: 6970
   timeout: 5s
