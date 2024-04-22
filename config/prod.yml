@@ -1,0 +1,13 @@
+env: "prod"
+grpc:
+  port: 6970
+  timeout: 5s
+postgresql:
+  host: db
+  port: 5432
+  user: service-tasks-owner
+  password: service-tasks-owner
+  dbname: service-tasks
+  sslmode: disable
+migrations:
+  path: "./migrations"
