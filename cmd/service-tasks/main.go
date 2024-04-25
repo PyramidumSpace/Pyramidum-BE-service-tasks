@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/config"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/env"
 	"log/slog"
 	"os"
-	"pyramidum-backend-service-tasks/internal/config"
-	"pyramidum-backend-service-tasks/internal/env"
 )
 
 func main() {
