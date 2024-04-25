@@ -1,5 +1,5 @@
 grpc:
-  port: 6970
+  port: 6969
   timeout: 5s
 postgresql:
   host: db
