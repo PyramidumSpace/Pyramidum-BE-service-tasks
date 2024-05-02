@@ -1,4 +1,4 @@
-module pyramidum-backend-service-tasks
+module github.com/g-vinokurov/pyramidum-backend-service-tasks
 
 go 1.22.1
 
@@ -6,6 +6,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/gorm v1.25.9
+  github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/joho/godotenv v1.5.1
 )
 
 require (
@@ -22,4 +24,7 @@ require (
 	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
