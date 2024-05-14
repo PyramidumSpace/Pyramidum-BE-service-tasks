@@ -4,6 +4,7 @@ import (
 	"context"
 	repository "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/database/repository/postgres"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/create"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/get"
 	proto "github.com/pyramidum-space/protos/gen/go/tasks"
 	"google.golang.org/grpc"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 type ServerAPI struct {
 	proto.UnimplementedTasksServiceServer
 	createHandlerFunc create.HandlerFunc
+	getHandlerFunc    get.HandlerFunc
 }
 
 func RegisterServer(gRPC *grpc.Server, log *slog.Logger, r *repository.Repository) {
@@ -19,6 +21,7 @@ func RegisterServer(gRPC *grpc.Server, log *slog.Logger, r *repository.Repositor
 		gRPC,
 		&ServerAPI{
 			createHandlerFunc: create.MakeCreateHandler(log, r),
+			getHandlerFunc:    get.MakeGetHandler(log, r),
 		},
 	)
 }
@@ -32,7 +35,7 @@ func (s *ServerAPI) Update(ctx context.Context, req *proto.UpdateRequest) (*prot
 }
 
 func (s *ServerAPI) Get(ctx context.Context, req *proto.GetRequest) (*proto.GetResponse, error) {
-	panic("TODO")
+	return s.getHandlerFunc(ctx, req)
 }
 
 func (s *ServerAPI) GetByUserID(ctx context.Context, req *proto.GetByUserIDRequest) (*proto.GetByUserIDResponse, error) {
