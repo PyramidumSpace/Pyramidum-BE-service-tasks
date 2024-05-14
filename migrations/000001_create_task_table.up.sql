@@ -14,10 +14,10 @@ CREATE TABLE task (
     progress_status progress_status NOT NULL,
     is_urgent BOOLEAN NOT NULL,
     is_important BOOLEAN NOT NULL,
-    owner_id UUID NOT NULL,
-    parent_task_id UUID,
+    owner_id INTEGER NOT NULL,
+    parent_id UUID,
     possible_deadline TIMESTAMP NOT NULL,
     weight INTEGER NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (parent_task_id) REFERENCES task(id)
+    FOREIGN KEY (parent_id) REFERENCES task(id)
 )
