@@ -1,0 +1,12 @@
+grpc:
+  port: 6969
+  timeout: 5s
+postgresql:
+  host: localhost
+  port: 5434
+  user: service-tasks-owner
+  password: service-tasks-owner
+  dbname: service-tasks
+  sslmode: disable
+migrations:
+  path: "./migrations"

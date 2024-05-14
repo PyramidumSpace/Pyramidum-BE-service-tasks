@@ -36,17 +36,18 @@ func (m *Migrator) ApplyMigrations(db *sql.DB, dbName string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	migrator, err := migrate.NewWithInstance("migration_embeded_sql_files", m.srcDriver, dbName, driver)
+	migrator, err := migrate.NewWithInstance("migration_embedded_sql_files", m.srcDriver, dbName, driver)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	defer func() {
-		_, _ = migrator.Close()
-	}()
 
 	if err = migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("%s: unable to apply migration: %w", op, err)
 	}
 
 	return nil
+}
+
+func (m *Migrator) Close() error {
+	return m.srcDriver.Close()
 }
