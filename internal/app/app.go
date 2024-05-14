@@ -54,6 +54,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 	return &App{
 		grpcApp:  grpcApp,
 		migrator: migrator,
+		database: database,
 	}, nil
 }
 
