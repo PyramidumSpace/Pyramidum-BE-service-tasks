@@ -1,9 +1,11 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/google/uuid"
 	"time"
 )
@@ -21,7 +23,8 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) CreateTask(
+func (r *Repository) CreateTaskContext(
+	ctx context.Context,
 	header string,
 	text string,
 	externalImages []string,
@@ -70,7 +73,7 @@ func (r *Repository) CreateTask(
 		})
 	}
 
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -105,7 +108,7 @@ func (r *Repository) CreateTask(
 			task.PossibleDeadline,
 			task.Weight).
 		RunWith(tx).
-		Exec()
+		ExecContext(ctx)
 
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
@@ -118,7 +121,7 @@ func (r *Repository) CreateTask(
 		stmt = stmt.Values(v.Id, v.Url, v.TaskId)
 	}
 
-	_, err = stmt.RunWith(tx).Exec()
+	_, err = stmt.RunWith(tx).ExecContext(ctx)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -129,4 +132,95 @@ func (r *Repository) CreateTask(
 	}
 
 	return task.Id, nil
+}
+
+func (r *Repository) Task(id uuid.UUID) (*model.Task, error) {
+	const op = "repository.Task"
+
+	task := taskTable{}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	err = r.pgsq.Select("id", "header", "text", "deadline", "progress_status", "is_urgent", "is_important", "owner_id", "parent_id", "possible_deadline", "weight").
+		From("task").
+		Where(sq.Eq{"id": id}).
+		RunWith(tx).
+		QueryRow().
+		Scan(
+			&task.Id,
+			&task.Header,
+			&task.Text,
+			&task.Deadline,
+			&task.ProgressStatus,
+			&task.IsUrgent,
+			&task.IsImportant,
+			&task.OwnerId,
+			&task.ParentId,
+			&task.PossibleDeadline,
+			&task.Weight,
+		)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	extImgs := make([]externalImageTable, 0)
+	rows, err := r.pgsq.Select("id", "url", "task_id").
+		From("external_image").
+		Where(sq.Eq{"task_id": id}).
+		RunWith(tx).
+		Query()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for rows.Next() {
+		var extImg externalImageTable
+		err = rows.Scan(&extImg.Id, &extImg.Url, &extImg.TaskId)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		extImgs = append(extImgs, extImg)
+	}
+	err = rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var parentId uuid.UUID
+	if task.ParentId == nil {
+		parentId = uuid.Nil
+	} else {
+		parentId = *task.ParentId
+	}
+
+	images := make([]string, 0, len(extImgs))
+	for _, v := range extImgs {
+		images = append(images, v.Url)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &model.Task{
+		Id:               task.Id,
+		Header:           task.Header,
+		Text:             task.Text,
+		Deadline:         task.Deadline,
+		ProgressStatus:   task.ProgressStatus,
+		IsUrgent:         task.IsUrgent,
+		IsImportant:      task.IsImportant,
+		OwnerId:          task.OwnerId,
+		ParentId:         parentId,
+		PossibleDeadline: task.PossibleDeadline,
+		Weight:           task.Weight,
+		ExternalImages:   images,
+	}, nil
 }
