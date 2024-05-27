@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/google/uuid"
 	"time"
 )
@@ -23,4 +24,25 @@ type externalImageTable struct {
 	Id     int32
 	Url    string
 	TaskId uuid.UUID
+}
+
+type progressStatus string
+
+const (
+	progressStatusInProgress progressStatus = "in progress"
+	progressStatusCanceled   progressStatus = "canceled"
+	progressStatusDone       progressStatus = "done"
+)
+
+func progressStatusFromModelProgressStatus(s model.ProgressStatus) (progressStatus, error) {
+	switch s {
+	case model.ProgressStatusInProgress:
+		return progressStatusInProgress, nil
+	case model.ProgressStatusCanceled:
+		return progressStatusCanceled, nil
+	case model.ProgressStatusDone:
+		return progressStatusDone, nil
+	default:
+		return "", nil
+	}
 }
