@@ -1,9 +1,9 @@
 grpc:
-  port: 6969
+  port: 6970
   timeout: 5s
 postgresql:
   host: localhost
-  port: 5434
+  port: 5435
   user: service-tasks-owner
   password: service-tasks-owner
   dbname: service-tasks

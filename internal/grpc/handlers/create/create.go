@@ -2,12 +2,11 @@ package create
 
 import (
 	"context"
-	"fmt"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/mapper"
 	"github.com/google/uuid"
 	proto "github.com/pyramidum-space/protos/gen/go/tasks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"time"
 )
@@ -15,7 +14,8 @@ import (
 type HandlerFunc = func(ctx context.Context, req *proto.CreateRequest) (*proto.CreateResponse, error)
 
 type TaskCreator interface {
-	CreateTask(
+	CreateTaskContext(
+		ctx context.Context,
 		header string,
 		text string,
 		externalImages []string,
@@ -38,27 +38,33 @@ func MakeCreateHandler(log *slog.Logger, creator TaskCreator) HandlerFunc {
 	)
 
 	return func(ctx context.Context, req *proto.CreateRequest) (*proto.CreateResponse, error) {
-		progressStatus, err := progressStatusToString(req.ProgressStatus)
+		progressStatus, err := mapper.ProtoProgressStatusToString(req.ProgressStatus)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
-		parentUUID, err := uuid.FromBytes(req.ParentId)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+		var parentUUID uuid.UUID
+		if req.ParentId == nil {
+			parentUUID = uuid.Nil
+		} else {
+			parentUUID, err = uuid.FromBytes(req.ParentId)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
 		}
 
-		id, err := creator.CreateTask(
+		id, err := creator.CreateTaskContext(
+			ctx,
 			req.Header,
 			req.Text,
 			req.ExternalImages,
-			protobufTimestampToTime(req.Deadline),
+			req.Deadline.AsTime(),
 			progressStatus,
 			req.IsUrgent,
 			req.IsImportant,
 			req.OwnerId,
 			parentUUID,
-			protobufTimestampToTime(req.PossibleDeadline),
+			req.PossibleDeadline.AsTime(),
 			req.Weight,
 		)
 
@@ -88,21 +94,4 @@ func bytesArrayToUUIDArray(ids [][]byte) ([]uuid.UUID, error) {
 	}
 
 	return uuids, nil
-}
-
-func protobufTimestampToTime(ts *timestamppb.Timestamp) time.Time {
-	return time.Unix(ts.Seconds, int64(ts.Nanos))
-}
-
-func progressStatusToString(status proto.ProgressStatus) (string, error) {
-	switch status {
-	case proto.ProgressStatus_PROGRESS_STATUS_CANCELED:
-		return "canceled", nil
-	case proto.ProgressStatus_PROGRESS_STATUS_IN_PROGRESS:
-		return "in progress", nil
-	case proto.ProgressStatus_PROGRESS_STATUS_DONE:
-		return "done", nil
-	default:
-		return "", fmt.Errorf("unknown progress status: %d", status)
-	}
 }
