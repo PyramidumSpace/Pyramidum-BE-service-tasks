@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/google/uuid"
-	"time"
 )
 
 type Repository struct {
@@ -223,8 +224,8 @@ func (r *Repository) TaskContext(ctx context.Context, id uuid.UUID) (*model.Task
 	}, nil
 }
 
-func (r *Repository) TasksByUserIdContext(ctx context.Context, userId int32) ([]*model.Task, error) {
-	const op = "repository.TasksByUserId"
+func (r *Repository) TasksContext(ctx context.Context, userId int32) ([]*model.Task, error) {
+	const op = "repository.Tasks"
 
 	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {

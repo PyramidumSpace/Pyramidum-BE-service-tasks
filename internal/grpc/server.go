@@ -2,32 +2,33 @@ package grpc
 
 import (
 	"context"
+	"log/slog"
+
 	repository "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/database/repository/postgres"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/create"
-	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/get"
-	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/getbyid"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/task"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/tasks"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/update"
 	proto "github.com/pyramidum-space/protos/gen/go/tasks"
 	"google.golang.org/grpc"
-	"log/slog"
 )
 
 type ServerAPI struct {
 	proto.UnimplementedTasksServiceServer
-	createHandlerFunc      create.HandlerFunc
-	getHandlerFunc         get.HandlerFunc
-	getByUserIdHandlerFunc getbyid.HandlerFunc
-	updateHandlerFunc      update.HandlerFunc
+	createHandlerFunc create.HandlerFunc
+	taskHandlerFunc   task.HandlerFunc
+	tasksHandlerFunc  tasks.HandlerFunc
+	updateHandlerFunc update.HandlerFunc
 }
 
 func RegisterServer(gRPC *grpc.Server, log *slog.Logger, r *repository.Repository) {
 	proto.RegisterTasksServiceServer(
 		gRPC,
 		&ServerAPI{
-			createHandlerFunc:      create.MakeCreateHandler(log, r),
-			getHandlerFunc:         get.MakeGetHandler(log, r),
-			getByUserIdHandlerFunc: getbyid.MakeGetByUserIdHandler(log, r),
-			updateHandlerFunc:      update.MakeUpdateHandler(log, r),
+			createHandlerFunc: create.MakeCreateHandler(log, r),
+			taskHandlerFunc:   task.MakeTaskHandler(log, r),
+			tasksHandlerFunc:  tasks.MakeTasksHandler(log, r),
+			updateHandlerFunc: update.MakeUpdateHandler(log, r),
 		},
 	)
 }
@@ -40,10 +41,10 @@ func (s *ServerAPI) Update(ctx context.Context, req *proto.UpdateRequest) (*prot
 	return s.updateHandlerFunc(ctx, req)
 }
 
-func (s *ServerAPI) Get(ctx context.Context, req *proto.GetRequest) (*proto.GetResponse, error) {
-	return s.getHandlerFunc(ctx, req)
+func (s *ServerAPI) Task(ctx context.Context, req *proto.TaskRequest) (*proto.TaskResponse, error) {
+	return s.taskHandlerFunc(ctx, req)
 }
 
-func (s *ServerAPI) GetByUserID(ctx context.Context, req *proto.GetByUserIDRequest) (*proto.GetByUserIDResponse, error) {
-	return s.getByUserIdHandlerFunc(ctx, req)
+func (s *ServerAPI) Tasks(ctx context.Context, req *proto.TasksRequest) (*proto.TasksResponse, error) {
+	return s.tasksHandlerFunc(ctx, req)
 }
