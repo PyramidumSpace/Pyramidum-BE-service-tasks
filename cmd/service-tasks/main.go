@@ -15,14 +15,12 @@ import (
 func main() {
 	log := slog.Default()
 
-	// init environment variables from .env filez
+	// init environment variables from .env file
 	env.MustLoadEnv()
 
 	log.Info("environment variables loaded")
 
-	configPath := os.Getenv("CONFIG_PATH")
-
-	cfg := config.MustLoadConfig(configPath)
+	cfg := config.MustLoadConfig()
 
 	log.Info("config loaded", slog.Any("config", cfg))
 
