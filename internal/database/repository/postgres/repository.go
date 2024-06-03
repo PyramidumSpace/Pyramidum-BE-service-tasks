@@ -252,47 +252,37 @@ func (r *Repository) TasksContext(
 		From("task").
 		Where(sq.Eq{"owner_id": ownerId})
 
-	fmt.Println(time.Time{})
-
 	if (deadlineFrom != time.Time{}) {
-		fmt.Println(deadlineFrom)
 		query = query.Where(sq.GtOrEq{"deadline": deadlineFrom})
 	}
 
 	if (deadlineTo != time.Time{}) {
-		fmt.Println(deadlineTo)
 		query = query.Where(sq.LtOrEq{"deadline": deadlineTo})
 	}
 
 	if (possibleDeadlineFrom != time.Time{}) {
-		fmt.Println(possibleDeadlineFrom)
 		query = query.Where(sq.GtOrEq{"possible_deadline": possibleDeadlineFrom})
 	}
 
 	if (possibleDeadlineTo != time.Time{}) {
-		fmt.Println(possibleDeadlineTo)
 		query = query.Where(sq.GtOrEq{"possible_deadline": possibleDeadlineTo})
 	}
 
 	query = query.Where(sq.Eq{"progress_status": progressStatus})
 
 	if isUrgent != nil {
-		fmt.Println(*isUrgent)
 		query = query.Where(sq.Eq{"is_urgent": *isUrgent})
 	}
 
 	if isImportant != nil {
-		fmt.Println(*isImportant)
 		query = query.Where(sq.Eq{"is_important": *isImportant})
 	}
 
 	if weightFrom != nil {
-		fmt.Println(*weightFrom)
 		query = query.Where(sq.GtOrEq{"weight": *weightFrom})
 	}
 
 	if weightTo != nil {
-		fmt.Println(*weightTo)
 		query = query.Where(sq.LtOrEq{"weight": *weightTo})
 	}
 
@@ -440,6 +430,108 @@ func (r *Repository) UpdateTaskContext(ctx context.Context, task *model.Task) er
 			ExecContext(ctx)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (r *Repository) PatchTaskContext(
+	ctx context.Context,
+	id uuid.UUID,
+	header *string,
+	text *string,
+	externalImages []string,
+	deadline time.Time,
+	progressStatus model.ProgressStatus,
+	isUrgent *bool,
+	isImportant *bool,
+	ownerId *int32,
+	parentId uuid.UUID,
+	possibleDeadline time.Time,
+	weight *int32,
+) error {
+	const op = "repository.PatchTask"
+
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	query := r.pgsq.Update("task")
+
+	if header != nil {
+		query = query.Set("header", header)
+	}
+
+	if text != nil {
+		query = query.Set("text", text)
+	}
+
+	if (deadline != time.Time{}) {
+		query = query.Set("deadline", deadline)
+	}
+
+	query = query.Set("progress_status", progressStatus)
+
+	if isUrgent != nil {
+		query = query.Set("is_urgent", isUrgent)
+	}
+
+	if isImportant != nil {
+		query = query.Set("is_important", isImportant)
+	}
+
+	if ownerId != nil {
+		query = query.Set("owner_id", ownerId)
+	}
+
+	if parentId != uuid.Nil {
+		query = query.Set("parent_id", parentId)
+	}
+
+	if (possibleDeadline != time.Time{}) {
+		query = query.Set("possible_deadline", possibleDeadline)
+	}
+
+	if weight != nil {
+		query = query.Set("weight", weight)
+	}
+
+	_, err = query.
+		Where(sq.Eq{"id": id}).
+		RunWith(tx).
+		ExecContext(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if externalImages != nil {
+		_, err = r.pgsq.Delete("external_image").
+			Where(sq.Eq{"task_id": id}).
+			RunWith(tx).
+			ExecContext(ctx)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		for i := range externalImages {
+			_, err = r.pgsq.Insert("external_image").
+				Columns("url", "task_id").
+				Values(externalImages[i], id).
+				RunWith(tx).
+				ExecContext(ctx)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
 		}
 	}
 

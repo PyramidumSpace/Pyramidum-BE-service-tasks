@@ -6,6 +6,7 @@ import (
 
 	repository "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/database/repository/postgres"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/create"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/patch"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/task"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/tasks"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/handlers/update"
@@ -19,6 +20,7 @@ type ServerAPI struct {
 	taskHandlerFunc   task.HandlerFunc
 	tasksHandlerFunc  tasks.HandlerFunc
 	updateHandlerFunc update.HandlerFunc
+	patchHandlerFunc  patch.HandlerFunc
 }
 
 func RegisterServer(gRPC *grpc.Server, log *slog.Logger, r *repository.Repository) {
@@ -29,6 +31,7 @@ func RegisterServer(gRPC *grpc.Server, log *slog.Logger, r *repository.Repositor
 			taskHandlerFunc:   task.MakeTaskHandler(log, r),
 			tasksHandlerFunc:  tasks.MakeTasksHandler(log, r),
 			updateHandlerFunc: update.MakeUpdateHandler(log, r),
+			patchHandlerFunc:  patch.MakePatchHandler(log, r),
 		},
 	)
 }
@@ -39,6 +42,10 @@ func (s *ServerAPI) Create(ctx context.Context, req *proto.CreateRequest) (*prot
 
 func (s *ServerAPI) Update(ctx context.Context, req *proto.UpdateRequest) (*proto.UpdateResponse, error) {
 	return s.updateHandlerFunc(ctx, req)
+}
+
+func (s *ServerAPI) Patch(ctx context.Context, req *proto.PatchRequest) (*proto.PatchResponse, error) {
+	return s.patchHandlerFunc(ctx, req)
 }
 
 func (s *ServerAPI) Task(ctx context.Context, req *proto.TaskRequest) (*proto.TaskResponse, error) {
