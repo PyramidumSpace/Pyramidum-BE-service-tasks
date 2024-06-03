@@ -22,6 +22,11 @@ func NewDatabase(host string, port uint16, user string, password string, dbname 
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
 	return &Database{db: db}, nil
 }
 

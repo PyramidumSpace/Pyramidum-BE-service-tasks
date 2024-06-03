@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/app"
-	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/config"
-	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/env"
-	slogattr "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/lib/log/slog/attr"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/app"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/config"
+	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/env"
+	slogattr "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/lib/log/slog/attr"
 )
 
 func main() {
@@ -19,9 +20,7 @@ func main() {
 
 	log.Info("environment variables loaded")
 
-	configPath := os.Getenv("CONFIG_PATH")
-
-	cfg := config.MustLoadConfig(configPath)
+	cfg := config.MustLoadConfig()
 
 	log.Info("config loaded", slog.Any("config", cfg))
 
