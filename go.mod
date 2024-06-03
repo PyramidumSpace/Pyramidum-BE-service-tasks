@@ -9,7 +9,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
-	github.com/pyramidum-space/protos v0.0.5
+	github.com/pyramidum-space/protos v0.0.6
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 )

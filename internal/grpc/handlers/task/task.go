@@ -1,7 +1,9 @@
-package get
+package task
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/mapper"
 	slogattr "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/lib/log/slog/attr"
@@ -10,23 +12,22 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log/slog"
 )
 
-type HandlerFunc = func(ctx context.Context, req *proto.GetRequest) (*proto.GetResponse, error)
+type HandlerFunc = func(ctx context.Context, req *proto.TaskRequest) (*proto.TaskResponse, error)
 
 type TaskProvider interface {
 	TaskContext(context.Context, uuid.UUID) (*model.Task, error)
 }
 
-func MakeGetHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
-	const op = "grpc.handlers.get.MakeGetHandler"
+func MakeTaskHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
+	const op = "grpc.handlers.task.MakeTaskHandler"
 
-	log = slog.With(
-		log, slog.String("op", op),
+	log = log.With(
+		slog.String("op", op),
 	)
 
-	return func(ctx context.Context, req *proto.GetRequest) (*proto.GetResponse, error) {
+	return func(ctx context.Context, req *proto.TaskRequest) (*proto.TaskResponse, error) {
 		id, err := uuid.FromBytes(req.TaskId)
 		if err != nil {
 			log.Error("invalid id", slog.Any("id", req.TaskId))
@@ -57,7 +58,7 @@ func MakeGetHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		return &proto.GetResponse{
+		return &proto.TaskResponse{
 			Task: &proto.Task{
 				Id:               protoId,
 				Header:           task.Header,

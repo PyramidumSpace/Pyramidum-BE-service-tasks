@@ -2,6 +2,8 @@ package update
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/mapper"
 	slogattr "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/lib/log/slog/attr"
@@ -9,7 +11,6 @@ import (
 	proto "github.com/pyramidum-space/protos/gen/go/tasks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log/slog"
 )
 
 type HandlerFunc = func(ctx context.Context, req *proto.UpdateRequest) (*proto.UpdateResponse, error)
@@ -21,8 +22,8 @@ type TaskUpdater interface {
 func MakeUpdateHandler(log *slog.Logger, provider TaskUpdater) HandlerFunc {
 	const op = "grpc.handlers.update.MakeUpdateHandler"
 
-	log = slog.With(
-		log, slog.String("op", op),
+	log = log.With(
+		slog.String("op", op),
 	)
 
 	return func(ctx context.Context, req *proto.UpdateRequest) (*proto.UpdateResponse, error) {
