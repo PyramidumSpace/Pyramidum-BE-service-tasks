@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 
+	"time"
+
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/domain/model"
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/mapper"
 	slogattr "github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/lib/log/slog/attr"
@@ -16,18 +18,129 @@ import (
 type HandlerFunc = func(ctx context.Context, req *proto.TasksRequest) (*proto.TasksResponse, error)
 
 type TaskProvider interface {
-	TasksContext(context.Context, int32) ([]*model.Task, error)
+	TasksContext(
+		ctx context.Context,
+		ownerId int32,
+		search *string,
+		deadlineFrom time.Time,
+		deadlineTo time.Time,
+		possibleDeadlineFrom time.Time,
+		possibleDeadlineTo time.Time,
+		progressStatus string,
+		isUrgent *bool,
+		isImportant *bool,
+		weightFrom *int32,
+		weightTo *int32,
+	) ([]*model.Task, error)
 }
 
 func MakeTasksHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
-	const op = "grpc.handlers.getbyid.MakeGetByUserIdHandler"
+	const op = "grpc.handlers.tasks.MakeTasksHandler"
 
 	log = slog.With(
 		log, slog.String("op", op),
 	)
 
 	return func(ctx context.Context, req *proto.TasksRequest) (*proto.TasksResponse, error) {
-		tasks, err := provider.TasksContext(ctx, req.OwnerId)
+		progressStatus, err := mapper.ProtoProgressStatusToString(*req.ProgressStatus)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		/*
+			var search string
+			if req.Search == nil {
+				search = ""
+			} else {
+				search = *req.Search
+			}
+		*/
+
+		var deadlineFrom time.Time
+		if req.DeadlineFrom == nil {
+			deadlineFrom = time.Time{}
+		} else {
+			deadlineFrom = req.DeadlineFrom.AsTime()
+		}
+
+		var deadlineTo time.Time
+		if req.DeadlineTo == nil {
+			deadlineTo = time.Time{}
+		} else {
+			deadlineTo = req.DeadlineTo.AsTime()
+		}
+
+		var possibleDeadlineFrom time.Time
+		if req.PossibleDeadlineFrom == nil {
+			possibleDeadlineFrom = time.Time{}
+		} else {
+			possibleDeadlineFrom = req.PossibleDeadlineFrom.AsTime()
+		}
+
+		var possibleDeadlineTo time.Time
+		if req.PossibleDeadlineTo == nil {
+			possibleDeadlineTo = time.Time{}
+		} else {
+			possibleDeadlineTo = req.PossibleDeadlineTo.AsTime()
+		}
+		/*
+			var isUrgent bool
+			if req.IsUrgent == nil {
+				isUrgent = false
+			} else {
+				isUrgent = *req.IsUrgent
+			}
+
+			var isImportant bool
+			if req.IsImportant == nil {
+				isImportant = false
+			} else {
+				isImportant = *req.IsImportant
+			}
+
+			var weightFrom int32
+			if req.WeightFrom == nil {
+				weightFrom = 0
+			} else {
+				weightFrom = *req.WeightFrom
+			}
+
+			var weightTo int32
+			if req.WeightTo == nil {
+				weightTo = 0
+			} else {
+				weightTo = *req.WeightTo
+			}
+		*/
+		/*
+			tasks, err := provider.TasksContext(
+				ctx,
+				req.OwnerId,
+				search,
+				deadlineFrom,
+				deadlineTo,
+				possibleDeadlineFrom,
+				possibleDeadlineTo,
+				progressStatus,
+				isUrgent,
+				isImportant,
+				weightFrom,
+				weightTo,
+			)
+		*/
+		tasks, err := provider.TasksContext(
+			ctx,
+			req.OwnerId,
+			req.Search,
+			deadlineFrom,
+			deadlineTo,
+			possibleDeadlineFrom,
+			possibleDeadlineTo,
+			progressStatus,
+			req.IsUrgent,
+			req.IsImportant,
+			req.WeightFrom,
+			req.WeightTo,
+		)
 		if err != nil {
 			log.Error("error getting tasks", slogattr.Err(err))
 			return nil, status.Error(codes.Internal, err.Error())

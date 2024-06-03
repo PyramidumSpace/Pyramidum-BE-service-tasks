@@ -224,7 +224,20 @@ func (r *Repository) TaskContext(ctx context.Context, id uuid.UUID) (*model.Task
 	}, nil
 }
 
-func (r *Repository) TasksContext(ctx context.Context, userId int32) ([]*model.Task, error) {
+func (r *Repository) TasksContext(
+	ctx context.Context,
+	ownerId int32,
+	search *string,
+	deadlineFrom time.Time,
+	deadlineTo time.Time,
+	possibleDeadlineFrom time.Time,
+	possibleDeadlineTo time.Time,
+	progressStatus string,
+	isUrgent *bool,
+	isImportant *bool,
+	weightFrom *int32,
+	weightTo *int32,
+) ([]*model.Task, error) {
 	const op = "repository.Tasks"
 
 	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
@@ -235,9 +248,55 @@ func (r *Repository) TasksContext(ctx context.Context, userId int32) ([]*model.T
 		_ = tx.Rollback()
 	}()
 
-	rows, err := r.pgsq.Select("id", "header", "text", "deadline", "progress_status", "is_urgent", "is_important", "owner_id", "parent_id", "possible_deadline", "weight").
+	query := r.pgsq.Select("id", "header", "text", "deadline", "progress_status", "is_urgent", "is_important", "owner_id", "parent_id", "possible_deadline", "weight").
 		From("task").
-		Where(sq.Eq{"owner_id": userId}).
+		Where(sq.Eq{"owner_id": ownerId})
+
+	fmt.Println(time.Time{})
+
+	if (deadlineFrom != time.Time{}) {
+		fmt.Println(deadlineFrom)
+		query = query.Where(sq.GtOrEq{"deadline": deadlineFrom})
+	}
+
+	if (deadlineTo != time.Time{}) {
+		fmt.Println(deadlineTo)
+		query = query.Where(sq.LtOrEq{"deadline": deadlineTo})
+	}
+
+	if (possibleDeadlineFrom != time.Time{}) {
+		fmt.Println(possibleDeadlineFrom)
+		query = query.Where(sq.GtOrEq{"possible_deadline": possibleDeadlineFrom})
+	}
+
+	if (possibleDeadlineTo != time.Time{}) {
+		fmt.Println(possibleDeadlineTo)
+		query = query.Where(sq.GtOrEq{"possible_deadline": possibleDeadlineTo})
+	}
+
+	query = query.Where(sq.Eq{"progress_status": progressStatus})
+
+	if isUrgent != nil {
+		fmt.Println(*isUrgent)
+		query = query.Where(sq.Eq{"is_urgent": *isUrgent})
+	}
+
+	if isImportant != nil {
+		fmt.Println(*isImportant)
+		query = query.Where(sq.Eq{"is_important": *isImportant})
+	}
+
+	if weightFrom != nil {
+		fmt.Println(*weightFrom)
+		query = query.Where(sq.GtOrEq{"weight": *weightFrom})
+	}
+
+	if weightTo != nil {
+		fmt.Println(*weightTo)
+		query = query.Where(sq.LtOrEq{"weight": *weightTo})
+	}
+
+	rows, err := query.
 		RunWith(tx).
 		QueryContext(ctx)
 	if err != nil {

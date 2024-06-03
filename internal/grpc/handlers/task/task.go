@@ -21,7 +21,7 @@ type TaskProvider interface {
 }
 
 func MakeTaskHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
-	const op = "grpc.handlers.get.MakeTaskHandler"
+	const op = "grpc.handlers.task.MakeTaskHandler"
 
 	log = slog.With(
 		log, slog.String("op", op),
