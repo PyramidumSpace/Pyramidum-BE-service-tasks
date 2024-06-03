@@ -46,14 +46,6 @@ func MakeTasksHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		/*
-			var search string
-			if req.Search == nil {
-				search = ""
-			} else {
-				search = *req.Search
-			}
-		*/
 
 		var deadlineFrom time.Time
 		if req.DeadlineFrom == nil {
@@ -82,51 +74,7 @@ func MakeTasksHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
 		} else {
 			possibleDeadlineTo = req.PossibleDeadlineTo.AsTime()
 		}
-		/*
-			var isUrgent bool
-			if req.IsUrgent == nil {
-				isUrgent = false
-			} else {
-				isUrgent = *req.IsUrgent
-			}
 
-			var isImportant bool
-			if req.IsImportant == nil {
-				isImportant = false
-			} else {
-				isImportant = *req.IsImportant
-			}
-
-			var weightFrom int32
-			if req.WeightFrom == nil {
-				weightFrom = 0
-			} else {
-				weightFrom = *req.WeightFrom
-			}
-
-			var weightTo int32
-			if req.WeightTo == nil {
-				weightTo = 0
-			} else {
-				weightTo = *req.WeightTo
-			}
-		*/
-		/*
-			tasks, err := provider.TasksContext(
-				ctx,
-				req.OwnerId,
-				search,
-				deadlineFrom,
-				deadlineTo,
-				possibleDeadlineFrom,
-				possibleDeadlineTo,
-				progressStatus,
-				isUrgent,
-				isImportant,
-				weightFrom,
-				weightTo,
-			)
-		*/
 		tasks, err := provider.TasksContext(
 			ctx,
 			req.OwnerId,
