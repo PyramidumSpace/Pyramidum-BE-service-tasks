@@ -2,13 +2,14 @@ package create
 
 import (
 	"context"
+	"log/slog"
+	"time"
+
 	"github.com/g-vinokurov/pyramidum-backend-service-tasks/internal/grpc/mapper"
 	"github.com/google/uuid"
 	proto "github.com/pyramidum-space/protos/gen/go/tasks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log/slog"
-	"time"
 )
 
 type HandlerFunc = func(ctx context.Context, req *proto.CreateRequest) (*proto.CreateResponse, error)
@@ -33,8 +34,8 @@ type TaskCreator interface {
 func MakeCreateHandler(log *slog.Logger, creator TaskCreator) HandlerFunc {
 	const op = "grpc.handlers.create.MakeCreateHandler"
 
-	log = slog.With(
-		log, slog.String("op", op),
+	log = log.With(
+		slog.String("op", op),
 	)
 
 	return func(ctx context.Context, req *proto.CreateRequest) (*proto.CreateResponse, error) {

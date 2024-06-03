@@ -26,7 +26,7 @@ type TaskProvider interface {
 		deadlineTo time.Time,
 		possibleDeadlineFrom time.Time,
 		possibleDeadlineTo time.Time,
-		progressStatus string,
+		progressStatus *string,
 		isUrgent *bool,
 		isImportant *bool,
 		weightFrom *int32,
@@ -37,14 +37,21 @@ type TaskProvider interface {
 func MakeTasksHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
 	const op = "grpc.handlers.tasks.MakeTasksHandler"
 
-	log = slog.With(
-		log, slog.String("op", op),
+	log = log.With(
+		slog.String("op", op),
 	)
 
 	return func(ctx context.Context, req *proto.TasksRequest) (*proto.TasksResponse, error) {
-		progressStatus, err := mapper.ProtoProgressStatusToString(*req.ProgressStatus)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+		var progressStatusPtr *string
+		if req.ProgressStatus != nil {
+			progressStatus, err := mapper.ProtoProgressStatusToString(*req.ProgressStatus)
+			if err != nil {
+				log.Error("invalid progress status", slog.Any("status", req.ProgressStatus))
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			progressStatusPtr = &progressStatus
+		} else {
+			progressStatusPtr = nil
 		}
 
 		var deadlineFrom time.Time
@@ -83,7 +90,7 @@ func MakeTasksHandler(log *slog.Logger, provider TaskProvider) HandlerFunc {
 			deadlineTo,
 			possibleDeadlineFrom,
 			possibleDeadlineTo,
-			progressStatus,
+			progressStatusPtr,
 			req.IsUrgent,
 			req.IsImportant,
 			req.WeightFrom,

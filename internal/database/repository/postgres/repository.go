@@ -232,7 +232,7 @@ func (r *Repository) TasksContext(
 	deadlineTo time.Time,
 	possibleDeadlineFrom time.Time,
 	possibleDeadlineTo time.Time,
-	progressStatus string,
+	progressStatusPtr *string,
 	isUrgent *bool,
 	isImportant *bool,
 	weightFrom *int32,
@@ -265,10 +265,12 @@ func (r *Repository) TasksContext(
 	}
 
 	if (possibleDeadlineTo != time.Time{}) {
-		query = query.Where(sq.GtOrEq{"possible_deadline": possibleDeadlineTo})
+		query = query.Where(sq.LtOrEq{"possible_deadline": possibleDeadlineTo})
 	}
 
-	query = query.Where(sq.Eq{"progress_status": progressStatus})
+	if progressStatusPtr != nil {
+		query = query.Where(sq.Eq{"progress_status": *progressStatusPtr})
+	}
 
 	if isUrgent != nil {
 		query = query.Where(sq.Eq{"is_urgent": *isUrgent})
@@ -448,7 +450,7 @@ func (r *Repository) PatchTaskContext(
 	text *string,
 	externalImages []string,
 	deadline time.Time,
-	progressStatus model.ProgressStatus,
+	progressStatusPtr *model.ProgressStatus,
 	isUrgent *bool,
 	isImportant *bool,
 	ownerId *int32,
@@ -480,7 +482,9 @@ func (r *Repository) PatchTaskContext(
 		query = query.Set("deadline", deadline)
 	}
 
-	query = query.Set("progress_status", progressStatus)
+	if progressStatusPtr != nil {
+		query = query.Set("progress_status", *progressStatusPtr)
+	}
 
 	if isUrgent != nil {
 		query = query.Set("is_urgent", isUrgent)

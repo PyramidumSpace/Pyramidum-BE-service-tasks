@@ -24,7 +24,7 @@ type TaskUpdater interface {
 		text *string,
 		externalImages []string,
 		deadline time.Time,
-		progressStatus model.ProgressStatus,
+		progressStatus *model.ProgressStatus,
 		isUrgent *bool,
 		isImportant *bool,
 		ownerId *int32,
@@ -37,8 +37,8 @@ type TaskUpdater interface {
 func MakePatchHandler(log *slog.Logger, provider TaskUpdater) HandlerFunc {
 	const op = "grpc.handlers.patch.MakePatchHandler"
 
-	log = slog.With(
-		log, slog.String("op", op),
+	log = log.With(
+		slog.String("op", op),
 	)
 
 	return func(ctx context.Context, req *proto.PatchRequest) (*proto.PatchResponse, error) {
@@ -60,10 +60,16 @@ func MakePatchHandler(log *slog.Logger, provider TaskUpdater) HandlerFunc {
 			parentId = parentIdTemp
 		}
 
-		progressStatus, err := mapper.ProtoProgressStatusToModelProgressStatus(*req.ProgressStatus)
-		if err != nil {
-			log.Error("invalid progress status", slog.Any("status", req.ProgressStatus))
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+		var progressStatusPtr *model.ProgressStatus
+		if req.ProgressStatus != nil {
+			progressStatus, err := mapper.ProtoProgressStatusToModelProgressStatus(*req.ProgressStatus)
+			if err != nil {
+				log.Error("invalid progress status", slog.Any("status", req.ProgressStatus))
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			progressStatusPtr = &progressStatus
+		} else {
+			progressStatusPtr = nil
 		}
 
 		var deadline time.Time
@@ -94,7 +100,7 @@ func MakePatchHandler(log *slog.Logger, provider TaskUpdater) HandlerFunc {
 			req.Text,
 			externalImages,
 			deadline,
-			progressStatus,
+			progressStatusPtr,
 			req.IsUrgent,
 			req.IsImportant,
 			req.OwnerId,
