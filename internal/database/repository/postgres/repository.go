@@ -115,16 +115,18 @@ func (r *Repository) CreateTaskContext(
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	stmt := r.pgsq.Insert("external_image").
-		Columns("url", "task_id")
+	if len(extImgs) != 0 {
+		stmt := r.pgsq.Insert("external_image").
+			Columns("url", "task_id")
 
-	for _, v := range extImgs {
-		stmt = stmt.Values(v.Url, v.TaskId)
-	}
+		for _, v := range extImgs {
+			stmt = stmt.Values(v.Url, v.TaskId)
+		}
 
-	_, err = stmt.RunWith(tx).ExecContext(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+		_, err = stmt.RunWith(tx).ExecContext(ctx)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	err = tx.Commit()
