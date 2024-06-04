@@ -31,7 +31,9 @@ func NewMigrator(sqlFiles fs.FS, dirName string) (*Migrator, error) {
 func (m *Migrator) ApplyMigrations(db *sql.DB, dbName string) error {
 	const op = "database.migration.postgres.ApplyMigrations"
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: "schema_migrations_tasks",
+	})
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
